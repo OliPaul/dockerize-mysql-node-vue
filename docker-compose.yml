@@ -1,0 +1,51 @@
+# Version de docker 
+version: "3.8"
+# Lister les services à lier
+services:
+  # Node Api
+  server:
+    # Repertoire de build c'est là que doit se trouver notre
+    # Dockerfile pour construire l'image du service 
+    build: ./node
+    # Nom de notre conteneur
+    container_name: node-server-container
+    # Le serveur devant fonctionner avec la base de données
+    # Il ne sera démarré qu'après le démarrage de la BD
+    depends_on:
+      - database
+    # Port accessible unique par les services donc inconnu de
+    # l'hôte
+    expose:
+      - "3535"
+    # Mapping le port du serveur node avec celui de l'hote
+    ports:
+      - "3535:3535"
+    # Restart server on failure
+    restart: on-failure
+    # Mapping node local directory with container workdir
+    volumes:
+      - ./node:/server
+
+  database:
+      image: mysql:latest
+      container_name: node-mysql-db
+      expose:
+        - "3306"
+      ports:
+        - "3600:3306"
+      restart: on-failure
+      command: mysqld --default-authentication-plugin=mysql_native_password
+      environment:
+        - MYSQL_ROOT_PASSWORD=root
+      volumes:
+        - ./database:/var/lib/mysql
+
+  webapp:
+      build: ./vue
+      container_name: node-vue-webapp
+      ports:
+        - "3536:8080"
+      depends_on: 
+        - server
+      volumes:
+        - ./vue:/webapp
